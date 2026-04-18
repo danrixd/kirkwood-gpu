@@ -51,6 +51,56 @@ def test_kepler_drift_closes_eccentric_orbit():
     assert abs(yn[0]) < 1e-9
 
 
+def test_fused_kepler_matches_numpy():
+    """The CuPy fused ElementwiseKernel path must agree with the NumPy
+    reference path on a batch of random elliptic orbits. Tolerance is
+    tight (1e-11) because both paths solve the same Newton problem.
+    Skipped when CuPy + CUDA runtime aren't available."""
+    import pytest
+
+    from kirkwood_gpu import _cuda_dll_loader  # noqa: F401 (side effect: DLLs)
+
+    try:
+        import cupy as cp  # type: ignore
+
+        cp.cuda.runtime.getDeviceCount()
+        probe = cp.arange(4, dtype=cp.float64)
+        _ = float((probe * probe).sum())
+    except Exception as exc:
+        pytest.skip(f"cupy/CUDA not usable ({exc!r})")
+
+    rng = np.random.default_rng(7)
+    n = 4096
+    # sample elliptic-orbit IC: random a in [2, 3.5], small e, random true anomaly
+    a = rng.uniform(2.0, 3.5, size=n)
+    e = rng.uniform(0.0, 0.25, size=n)
+    f = rng.uniform(0.0, 2.0 * math.pi, size=n)
+    om = rng.uniform(0.0, 2.0 * math.pi, size=n)
+    r = a * (1.0 - e * e) / (1.0 + e * np.cos(f))
+    th = f + om
+    x = r * np.cos(th)
+    y = r * np.sin(th)
+    vmag = np.sqrt(GM_SUN * (2.0 / r - 1.0 / a))
+    gamma = np.arctan2(e * np.sin(f), 1.0 + e * np.cos(f))
+    vphi = th + 0.5 * math.pi - gamma
+    vx = vmag * np.cos(vphi)
+    vy = vmag * np.sin(vphi)
+    dt = 1.3  # years — deliberately non-small
+
+    # NumPy path
+    xn, yn, vxn, vyn, vn = kepler_drift(x, y, vx, vy, dt, GM_SUN, xp=np)
+    # CuPy path
+    xc, yc, vxc, vyc, vc = kepler_drift(
+        cp.asarray(x), cp.asarray(y), cp.asarray(vx), cp.asarray(vy),
+        dt, GM_SUN, xp=cp,
+    )
+    assert np.abs(xn - cp.asnumpy(xc)).max() < 1e-11
+    assert np.abs(yn - cp.asnumpy(yc)).max() < 1e-11
+    assert np.abs(vxn - cp.asnumpy(vxc)).max() < 1e-11
+    assert np.abs(vyn - cp.asnumpy(vyc)).max() < 1e-11
+    assert np.array_equal(vn, cp.asnumpy(vc))
+
+
 def test_wh_jacobi_conservation_large_dt():
     """WH at dt = T_J / 20 should conserve Jacobi at roughly the same
     order as yoshida4 at dt = T_J / 200 — i.e. the analytic Kepler step
