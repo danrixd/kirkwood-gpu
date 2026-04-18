@@ -102,7 +102,27 @@ drift-comparison plot above).
   almost immediately; the 3:1 shows a slow linear rise; the non-resonant
   control at a = 2.70 AU stays flat.
 
-### Why 10⁵ yr is not yet "the gaps carved out"
+### Didactic comparison: the same code at 15× Jupiter mass
+
+![boosted hero](docs/boosted_mass_hero.png)
+
+*20,000 particles, 3,000 yr, `--mass-scale 15`. Same code, same
+integrator, same initial conditions. The 3:1 gap at 2.50 AU is
+unambiguously carved; the 2:1 region shows the characteristic
+libration + ejection pattern. Reproduce with*
+
+```bash
+python -m kirkwood_gpu.run --particles 20000 --years 3000 --seed 42 \
+    --mass-scale 15 --out runs/boosted_mass_15x --no-gif
+```
+
+*This is what the classical textbook figure looks like, and serves as a
+visual sanity check that the pipeline produces correct resonance
+structure at physical-mass-equivalent timescales (~10⁵–10⁶ yr). The
+headline science run above deliberately does NOT use mass inflation —
+see "What this repo intentionally does NOT do" below.*
+
+### Why 10⁵ yr at physical mass is not yet "the gaps carved out"
 
 Wisdom (1982) showed that the 3:1 gap arises from a **chaotic
 eccentricity-pumping** mechanism: orbits near the resonance develop
