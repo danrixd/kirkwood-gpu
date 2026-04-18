@@ -1,8 +1,13 @@
 # kirkwood-gpu
 
+[![tests](https://github.com/danrixd/kirkwood-gpu/actions/workflows/tests.yml/badge.svg)](https://github.com/danrixd/kirkwood-gpu/actions/workflows/tests.yml)
+[![python](https://img.shields.io/badge/python-3.11%20%7C%203.12-blue)](https://www.python.org/)
+[![license](https://img.shields.io/badge/license-MIT-green)](LICENSE)
+
 Kirkwood-gap formation in the planar circular restricted three-body problem,
 at realistic Jupiter mass, 10⁵ test particles, integrated with a 4th-order
-symplectic integrator on a single consumer GPU via CuPy.
+symplectic integrator (Yoshida 4) or the Wisdom-Holman mapping on a single
+consumer GPU via CuPy.
 
 ![hero](docs/hero.png)
 
