@@ -1,0 +1,32 @@
+{
+  "backend": "numpy",
+  "on_gpu": false,
+  "integrator": "yoshida4",
+  "steps": 500,
+  "results": [
+    {
+      "n_particles": 1000,
+      "n_steps": 500,
+      "integrator": "yoshida4",
+      "wall_s": 0.28246609997586347,
+      "particle_steps_per_sec": 1770123.91944635,
+      "checksum": -86.73939898775595
+    },
+    {
+      "n_particles": 10000,
+      "n_steps": 500,
+      "integrator": "yoshida4",
+      "wall_s": 3.491653300006874,
+      "particle_steps_per_sec": 1431986.388794717,
+      "checksum": 192.98852348276796
+    },
+    {
+      "n_particles": 100000,
+      "n_steps": 500,
+      "integrator": "yoshida4",
+      "wall_s": 47.439681799995014,
+      "particle_steps_per_sec": 1053969.969925162,
+      "checksum": 466.4809010774342
+    }
+  ]
+}

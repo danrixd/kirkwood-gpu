@@ -1,0 +1,40 @@
+{
+  "backend": "cupy",
+  "on_gpu": true,
+  "integrator": "yoshida4",
+  "steps": 500,
+  "results": [
+    {
+      "n_particles": 1000,
+      "n_steps": 500,
+      "integrator": "yoshida4",
+      "wall_s": 2.99414200001047,
+      "particle_steps_per_sec": 166992.7478383629,
+      "checksum": -86.73939898774742
+    },
+    {
+      "n_particles": 10000,
+      "n_steps": 500,
+      "integrator": "yoshida4",
+      "wall_s": 3.121137500012992,
+      "particle_steps_per_sec": 1601980.0473318421,
+      "checksum": 192.98852348282708
+    },
+    {
+      "n_particles": 100000,
+      "n_steps": 500,
+      "integrator": "yoshida4",
+      "wall_s": 3.149044199992204,
+      "particle_steps_per_sec": 15877833.66144044,
+      "checksum": 466.48090107719827
+    },
+    {
+      "n_particles": 1000000,
+      "n_steps": 500,
+      "integrator": "yoshida4",
+      "wall_s": 4.5206037999887485,
+      "particle_steps_per_sec": 110604694.00155008,
+      "checksum": 7049.072297037258
+    }
+  ]
+}

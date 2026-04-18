@@ -1,0 +1,22 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+.pytest_cache/
+.coverage
+htmlcov/
+.ipynb_checkpoints/
+*.npz
+*.npy
+data/
+runs/
+# keep committed outputs under docs/ and benchmarks/
+!docs/**/*.png
+!docs/**/*.gif
+!benchmarks/*.md
+.DS_Store
+Thumbs.db

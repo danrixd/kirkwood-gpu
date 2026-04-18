@@ -1,0 +1,32 @@
+{
+  "backend": "cupy",
+  "on_gpu": true,
+  "integrator": "wisdom_holman",
+  "steps": 500,
+  "results": [
+    {
+      "n_particles": 10000,
+      "n_steps": 500,
+      "integrator": "wisdom_holman",
+      "wall_s": 5.0110843000002205,
+      "particle_steps_per_sec": 997788.0435976262,
+      "checksum": 192.67210377765127
+    },
+    {
+      "n_particles": 100000,
+      "n_steps": 500,
+      "integrator": "wisdom_holman",
+      "wall_s": 5.507864299986977,
+      "particle_steps_per_sec": 9077928.808107749,
+      "checksum": 467.41724210732326
+    },
+    {
+      "n_particles": 1000000,
+      "n_steps": 500,
+      "integrator": "wisdom_holman",
+      "wall_s": 10.485296299972106,
+      "particle_steps_per_sec": 47685824.5771586,
+      "checksum": 7058.962546350693
+    }
+  ]
+}

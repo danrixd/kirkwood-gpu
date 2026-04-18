@@ -1,0 +1,16 @@
+{
+  "backend": "numpy",
+  "on_gpu": false,
+  "integrator": "yoshida4",
+  "steps": 200,
+  "results": [
+    {
+      "n_particles": 1000000,
+      "n_steps": 200,
+      "integrator": "yoshida4",
+      "wall_s": 222.33256539999275,
+      "particle_steps_per_sec": 899553.3319205182,
+      "checksum": -1134.4155455929833
+    }
+  ]
+}
