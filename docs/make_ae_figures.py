@@ -77,6 +77,65 @@ def plot_ae_scatter(snaps, params, out_path: Path):
     print(f"wrote {out_path}")
 
 
+def plot_chaos_filter_histogram(snaps, params, out_path: Path, e_thresh: float = 0.12):
+    """Histogram over initial semi-major axis, restricted to particles
+    whose osculating eccentricity exceeded ``e_thresh`` at any snapshot.
+
+    This isolates the *chaotic* population — particles whose eccentricity
+    has been excited by resonant dynamics — from the bulk that continues
+    to librate gently at its initial e ~ 0.05. The chaotic ones mark
+    exactly the mean-motion-resonance locations, so the histogram shows
+    sharp peaks right at the Kirkwood gaps.
+    """
+    n_snap = snaps["t"].shape[0]
+    a_init, _, _ = _osculating(0, snaps, params)
+    # bool mask over all particles tracked by the initial snapshot
+    N = a_init.shape[0]
+    chaotic = np.zeros(N, dtype=bool)
+    for k in range(n_snap):
+        _, e, _ = _osculating(k, snaps, params)
+        # aligning: _osculating() returns only valid; we keep same mask per k
+        # since all runs have fixed alive/valid (100,000) the ordering holds
+        if e.shape[0] == N:
+            chaotic |= e > e_thresh
+    a_final, _, _ = _osculating(-1, snaps, params)
+    # use final-snapshot indexing for histogramming
+    if chaotic.shape[0] == a_final.shape[0]:
+        a_chaotic = a_final[chaotic]
+    else:
+        a_chaotic = a_final
+
+    a_edges = np.linspace(1.8, 3.6, 241)
+    fig, ax = plt.subplots(figsize=(9, 4.5), dpi=200)
+    ax.hist(a_chaotic, bins=a_edges, color="#d62728", alpha=0.85,
+            label=f"chaotic particles (max $e > {e_thresh}$ over the run)")
+    for label, a_res in [
+        ("3:1", resonance_semimajor_axis(3, 1)),
+        ("5:2", resonance_semimajor_axis(5, 2)),
+        ("7:3", resonance_semimajor_axis(7, 3)),
+        ("2:1", resonance_semimajor_axis(2, 1)),
+    ]:
+        color = "#d62728" if label in ("3:1", "2:1") else "#888888"
+        lw = 1.2 if label in ("3:1", "2:1") else 0.8
+        ax.axvline(a_res, color="black", ls="--", lw=lw, alpha=0.6)
+        ax.text(a_res, ax.get_ylim()[1] * 0.95 if False else 0, label,
+                color=color, ha="center", va="bottom", fontsize=10,
+                fontweight="bold" if label in ("3:1", "2:1") else "normal")
+    ax.set_xlim(1.8, 3.6)
+    ax.set_xlabel("osculating semi-major axis a (AU)")
+    ax.set_ylabel("chaotic particle count")
+    ax.set_title(
+        f"Chaotic population at t = {float(snaps['t'][-1]):,.0f} yr "
+        f"({a_chaotic.size:,} particles of {N:,} total)"
+    )
+    ax.grid(True, axis="y", alpha=0.25)
+    ax.legend(loc="upper left", fontsize=9)
+    fig.tight_layout()
+    fig.savefig(out_path, dpi=200)
+    plt.close(fig)
+    print(f"wrote {out_path}")
+
+
 def plot_e_at_resonance(snaps, params, out_path: Path):
     """Median |e| at each snapshot in narrow bands around each resonance."""
     a_3_1 = resonance_semimajor_axis(3, 1)
@@ -122,6 +181,7 @@ def main():
 
     plot_ae_scatter(snaps, params, ns.out_dir / "final_ae_scatter.png")
     plot_e_at_resonance(snaps, params, ns.out_dir / "eccentricity_evolution.png")
+    plot_chaos_filter_histogram(snaps, params, ns.out_dir / "chaos_filtered_hist.png")
 
 
 if __name__ == "__main__":

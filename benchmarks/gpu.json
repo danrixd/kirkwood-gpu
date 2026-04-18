@@ -8,33 +8,33 @@
       "n_particles": 1000,
       "n_steps": 500,
       "integrator": "yoshida4",
-      "wall_s": 2.99414200001047,
-      "particle_steps_per_sec": 166992.7478383629,
-      "checksum": -86.73939898774742
+      "wall_s": 2.882108599995263,
+      "particle_steps_per_sec": 173484.09424989115,
+      "checksum": -86.73939898777192
     },
     {
       "n_particles": 10000,
       "n_steps": 500,
       "integrator": "yoshida4",
-      "wall_s": 3.121137500012992,
-      "particle_steps_per_sec": 1601980.0473318421,
-      "checksum": 192.98852348282708
+      "wall_s": 2.3977897000149824,
+      "particle_steps_per_sec": 2085253.7651524476,
+      "checksum": 192.98852348277043
     },
     {
       "n_particles": 100000,
       "n_steps": 500,
       "integrator": "yoshida4",
-      "wall_s": 3.149044199992204,
-      "particle_steps_per_sec": 15877833.66144044,
-      "checksum": 466.48090107719827
+      "wall_s": 2.777271400031168,
+      "particle_steps_per_sec": 18003281.926079992,
+      "checksum": 466.4809010772542
     },
     {
       "n_particles": 1000000,
       "n_steps": 500,
       "integrator": "yoshida4",
-      "wall_s": 4.5206037999887485,
-      "particle_steps_per_sec": 110604694.00155008,
-      "checksum": 7049.072297037258
+      "wall_s": 5.178438099974301,
+      "particle_steps_per_sec": 96554210.0430787,
+      "checksum": 7049.072297038037
     }
   ]
 }

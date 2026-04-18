@@ -4,10 +4,10 @@ Integrator: **yoshida4**. 500 composite steps per run; each Yoshida4 step does 3
 
 | N particles | CPU wall (s) | GPU wall (s) | CPU throughput | GPU throughput | GPU speedup |
 |------------:|-------------:|-------------:|---------------:|---------------:|------------:|
-|       1,000 |         0.28 |         2.99 |       1.77e+06 |       1.67e+05 |        0.1x |
-|      10,000 |         3.49 |         3.12 |       1.43e+06 |       1.60e+06 |        1.1x |
-|     100,000 |        47.44 |         3.15 |       1.05e+06 |       1.59e+07 |       15.1x |
-|   1,000,000 |       222.33 |         4.52 |       9.00e+05 |       1.11e+08 |      123.0x |
+|       1,000 |         0.28 |         2.88 |       1.77e+06 |       1.73e+05 |        0.1x |
+|      10,000 |         3.49 |         2.40 |       1.43e+06 |       2.09e+06 |        1.5x |
+|     100,000 |        47.44 |         2.78 |       1.05e+06 |       1.80e+07 |       17.1x |
+|   1,000,000 |       222.33 |         5.18 |       9.00e+05 |       9.66e+07 |      107.3x |
 
 Throughput is reported in (particles × composite-steps) per second, so wall-clock time for a run of length `T` years at step `h` years is
 

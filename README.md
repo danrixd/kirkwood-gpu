@@ -9,13 +9,19 @@ at realistic Jupiter mass, 10⁵ test particles, integrated with a 4th-order
 symplectic integrator (Yoshida 4) or the Wisdom-Holman mapping on a single
 consumer GPU via CuPy.
 
-![hero](docs/hero.png)
+![chaos-filtered histogram at 10⁶ yr](docs/chaos_filtered_hist.png)
+
+*The 10⁵ test particles whose eccentricity crossed 0.12 at any point during the 10⁶-year integration — 12.5% of the initial belt — sorted by final semi-major axis. Sharp spikes sit exactly on the 3:1 (2.50 AU), 5:2 (2.82 AU), 7:3 (2.96 AU), and 2:1 (3.28 AU) mean-motion resonances. This is the direct Wisdom-1982 chaotic-escape signature: the chaos is localized at the resonances, and over longer integrations these chaotic orbits pump eccentricity past the Mars-crossing threshold and exit the belt, carving the classical Kirkwood gaps.*
+
+![histogram of all particles at 10⁶ yr](docs/hero.png)
+
+*All 10⁵ particles by osculating semi-major axis at the same moment. The 2:1 libration island at 3.28 AU is prominent; the 3:1 shows a visible dip. The full carved-out histogram at physical Jupiter mass takes ~10⁶–10⁷ yr; this 10⁶-yr snapshot is the point in that timeline where the chaotic population is clearly separated from the bulk (preceding figure) but most of it has not yet escaped (this figure). Same data, two views.*
 
 ![animation](docs/animations/kirkwood_realistic.gif)
 
-![phase portrait at 100,000 yr](docs/final_ae_scatter.png)
+![phase portrait at 10⁶ yr](docs/final_ae_scatter.png)
 
-*(a, e) scatter of all 10⁵ particles at t = 100,000 yr. The vertical spike at a = 3.28 AU is the 2:1 libration island pumping e from 0.05 up to ~0.20. The 3:1 at a = 2.50 AU shows a subtler enhancement — the Wisdom 1982 chaotic-escape mechanism unfolds over >10⁶ yr at realistic mass; see "What the figures show" below.*
+*(a, e) phase portrait of all 10⁵ particles at t = 10⁶ yr. The vertical spike at a = 3.28 AU is the 2:1 libration island pumping e from 0.05 up to ~0.20. The narrow enhancement at a = 2.50 AU is the 3:1 chaotic layer.*
 
 ## What this repo is
 
@@ -61,38 +67,38 @@ Störmer-Verlet composition), `leapfrog` (2nd-order), and `wisdom_holman`
 ## Headline run (measured)
 
 End-to-end on an RTX 3080 Ti, 10⁵ test particles, **physical** Jupiter
-mass, **5×10⁵ years** integrated with the Wisdom-Holman mapping:
+mass, **10⁶ years** integrated with the Wisdom-Holman mapping:
 
 | property                                        | value                |
 |-------------------------------------------------|----------------------|
 | particles                                       | 100,000              |
-| integration time                                | 500,000 yr           |
+| integration time                                | 1,000,000 yr         |
 | Jupiter mass ratio                              | 1 / 1047.3486 (physical) |
 | integrator                                      | Wisdom-Holman (DKD)  |
 | step size                                       | T_J / 20 = 0.593 yr  |
-| total composite steps                           | 842,658              |
+| total composite steps                           | 1,685,316            |
 | hardware                                        | RTX 3080 Ti (12 GB)  |
-| **wall time**                                   | **2h 0m (7,177 s)**  |
-| median \|ΔC_J / C_J\| over run                  | 1.15 × 10⁻⁵          |
-| 95th percentile \|ΔC_J / C_J\|                  | 1.66 × 10⁻⁴          |
-| max \|ΔC_J / C_J\|                              | 1.23 × 10⁻³          |
+| **wall time**                                   | **32m 25s (1,945 s)** |
+| median \|ΔC_J / C_J\| over run                  | 1.31 × 10⁻⁵          |
+| 95th percentile \|ΔC_J / C_J\|                  | 1.73 × 10⁻⁴          |
+| max \|ΔC_J / C_J\|                              | 1.16 × 10⁻³          |
+| chaotic particles (max e > 0.12 over run)       | 12,470 / 100,000     |
 | particles lost (escape / collision)             | 0 / 100,000          |
 
 The Wisdom-Holman step takes dt ten times larger than the Yoshida4
 integrator (analytic Kepler drift + Jupiter kick; see
-[`docs/derivation.md`](docs/derivation.md) §7), so 500,000 yr completes
-in almost the same wall time as 100,000 yr with Yoshida4. There is a
-tradeoff: WH at dt = T_J/20 has larger absolute Jacobi drift than
-Yoshida4 at dt = T_J/200, but the drift is bounded (non-secular) as
-required, and 100% of the particle population survives the entire
-integration.
+[`docs/derivation.md`](docs/derivation.md) §7), and the fused CuPy
+`ElementwiseKernel` for the Kepler advance handles the entire Newton
+iteration and f/g reconstruction in one GPU launch. Net effect: one
+million years of 100,000-test-particle CR3BP integration at realistic
+Jupiter mass in half an hour of GPU wall time.
 
 Independently, the Yoshida4 path was measured on a shorter horizon for
 strict conservation: 10⁵ particles × 10⁵ yr took 2h 35m with median
-\|ΔC_J / C_J\| = 9.4 × 10⁻⁷, p95 = 1.3 × 10⁻⁵. This is roughly an order
-of magnitude tighter than WH at dt = T_J/20 and is the right choice if
-the application needs strict \|ΔC_J / C_J\| < 10⁻⁵ over the full
-integration; it is correspondingly slower per year of simulated time.
+\|ΔC_J / C_J\| = 9.4 × 10⁻⁷, p95 = 1.3 × 10⁻⁵. That is roughly an
+order of magnitude tighter than WH at dt = T_J/20 and is the right
+choice when the application needs strict \|ΔC_J / C_J\| < 10⁻⁵ over
+the full integration.
 
 The conservation diagnostic is measured on a deterministic 256-particle
 subsample. Running the same diagnostics at 10× shorter (10,000 yr) gave
@@ -104,26 +110,32 @@ drift-comparison plot above).
 
 ### What the figures show
 
-All three figures below are from the same 5×10⁵-yr WH run.
+All figures below are from the same 10⁶-yr WH run.
 
-- **`docs/hero.png` (semi-major-axis histogram, t = 500,000 yr).** The 2:1
-  resonance at a = 3.28 AU shows a saturated libration peak/dip (particles
-  trapped on large-amplitude librating orbits accumulate at a ≈ 3.22 AU
-  and are depleted at a = 3.28). The 3:1 resonance at a = 2.50 AU shows
-  a ~15% dip below the background — gap formation has started but is not
-  yet the dramatic "carved out" result one gets at 10⁶–10⁷ yr.
-- **`docs/final_ae_scatter.png` (a, e phase portrait, t = 500,000 yr).**
-  The physically meaningful signal. Eccentricities at the 2:1 have been
-  pumped from the initial ~0.05 up to ~0.20; a narrow vertical enhancement
-  above the background sits exactly at the 3:1 line.
+- **`docs/chaos_filtered_hist.png` — the headline.** Histogram of the
+  **chaotic subpopulation**, defined as particles whose eccentricity
+  exceeded 0.12 at any snapshot during the 10⁶-yr integration
+  (12,470 particles out of 100,000). These are the ones that resonance
+  is actively working on, and they stack in sharp, narrow spikes at
+  *exactly* 3:1 (2.50 AU), 5:2 (2.82 AU), 7:3 (2.96 AU), and 2:1
+  (3.28 AU). This is Wisdom 1982 in one figure: chaos is localized at
+  the mean-motion resonances. Over longer times this population pumps
+  to e > 0.3 and exits the belt through Mars-crossing or close
+  encounters — that's gap carving.
+- **`docs/hero.png` (all-particles histogram, t = 10⁶ yr).** The raw
+  semi-major-axis distribution of all 100,000 particles. The 2:1
+  libration peak/dip at 3.28 AU and a visible 3:1 dip are present; the
+  full carved-out gap needs longer integration (10⁶–10⁷ yr more —
+  bounded by actually *losing* the chaotic particles to Mars crossers).
+- **`docs/final_ae_scatter.png` (a, e phase portrait, t = 10⁶ yr).**
+  Eccentricities at the 2:1 pumped from 0.05 up to 0.20. A narrow
+  vertical enhancement at a = 2.50 AU is the 3:1 chaotic layer.
 - **`docs/eccentricity_evolution.png`.** 90th-percentile eccentricity in
-  narrow bands around each resonance over the full 500,000 yr. The 2:1
-  saturates at e₉₀ ≈ 0.14 in the first ~10 kyr and stays there
-  (librating, not escaping). The 3:1 plateaus at e₉₀ ≈ 0.115 — modestly
-  elevated above the 7:3 and the non-resonant control (e₉₀ ≈ 0.108)
-  but nowhere near the ~0.3 threshold where Mars-crossing begins. The
-  clear *separation* between the 3:1 (red) and the control (green)
-  traces is the direct Wisdom-1982 chaotic-pumping signal.
+  narrow bands around each resonance over 10⁶ yr. The 2:1 saturates at
+  e₉₀ ≈ 0.145 in the first ~10 kyr and stays there. The 3:1 plateaus at
+  e₉₀ ≈ 0.117, clearly separated from the 7:3 (0.107) and the
+  non-resonant control (0.109). The separation between the 3:1 (red)
+  and the control (green) traces is the direct chaotic-pumping signal.
 
 ### Didactic comparison: the same code at 15× Jupiter mass
 
@@ -145,31 +157,31 @@ structure at physical-mass-equivalent timescales (~10⁵–10⁶ yr). The
 headline science run above deliberately does NOT use mass inflation —
 see "What this repo intentionally does NOT do" below.*
 
-### Why 5×10⁵ yr at physical mass is not yet "the gaps carved out"
+### Why 10⁶ yr at physical mass is the chaos in progress, not yet fully complete
 
 Wisdom (1982) showed that the 3:1 gap arises from a **chaotic
 eccentricity-pumping** mechanism: orbits near the resonance develop
 e > 0.3 and subsequently cross Mars (or the Sun), leaving the belt.
 The characteristic timescale for this at the *physical* Jupiter mass
-is ~10⁶–10⁷ yr. At 5×10⁵ yr — which is what fits in a single session
-of wall time on this hardware — the diagnostic eccentricity at the 3:1
-has risen to e₉₀ ≈ 0.115 from a control of 0.108: the chaotic pumping
-has started, but none of the resonant particles have yet crossed Mars.
-Reaching the fully carved-out histogram needs either
+is ~10⁶–10⁷ yr. At exactly 10⁶ yr — the duration of the headline run —
+we see the **chaos in progress**: 12.5% of the belt has been identified
+as chaotic (max e > 0.12), the chaotic subpopulation is sharply
+localized at every integer:integer mean-motion resonance, and the 3:1
+band's e₉₀ has separated from the non-resonant control. But the
+chaotic orbits have not yet pumped past e ≈ 0.3, so none have crossed
+Mars and the all-particles histogram still shows most of them at their
+original semi-major axis. Reaching the fully carved-out histogram needs
 
-- **more time**: `--years 1000000` (or more) with the same WH
-  configuration. On this hardware 10⁶ yr would take ~4 hours.
-- **mass inflation** (`--mass-scale 15`, shown in the didactic figure
-  above): the classic shortcut. Useful for visual verification; not
-  the scientific claim of this repo.
+- **longer integration**: `--years 10000000` (10⁷) with the same WH
+  configuration would take ~5.4 hours on this hardware.
+- **mass inflation** (`--mass-scale 15`, the didactic figure above):
+  the classic shortcut. Useful for visual verification, not the
+  scientific claim of this repo.
 
-This repo honestly owns the timescale: the pipeline is correct, the
-symplectic conservation holds over the full 500,000-yr horizon with
-all 10⁵ particles surviving, and the *physical mechanism* of gap
-formation is visibly active in the (a, e) phase-space signal and the
-eccentricity-evolution curve. The fully-carved-out histogram at
-physical mass needs a longer integration of the same code — no
-algorithmic change required.
+The pipeline is correct, symplectic conservation holds over the full
+10⁶-yr horizon with 100% particle survival, and the physical mechanism
+of gap formation is visibly active — sharply so in the chaos-filtered
+histogram. Extending to the final 10⁷-yr view requires only wall time.
 
 ## Numerical quality
 
@@ -194,15 +206,17 @@ table. Yoshida4, 500 composite steps per run, RTX 3080 Ti:
 
 | N         | CPU wall | GPU wall | CPU tp        | GPU tp        | speedup |
 |-----------|---------:|---------:|--------------:|--------------:|--------:|
-| 10³       |   0.28 s |   2.99 s | 1.8 × 10⁶    | 1.7 × 10⁵    | 0.1×    |
-| 10⁴       |   3.49 s |   3.12 s | 1.4 × 10⁶    | 1.6 × 10⁶    | 1.1×    |
-| 10⁵       |  47.44 s |   3.15 s | 1.1 × 10⁶    | 1.6 × 10⁷    | 15×     |
-| 10⁶       | 222.33 s |   4.52 s | 9.0 × 10⁵    | 1.1 × 10⁸    | **123×**|
+| 10³       |   0.28 s |   2.88 s | 1.8 × 10⁶    | 1.7 × 10⁵    | 0.1×    |
+| 10⁴       |   3.49 s |   2.40 s | 1.4 × 10⁶    | 2.1 × 10⁶    | 1.5×    |
+| 10⁵       |  47.44 s |   2.78 s | 1.1 × 10⁶    | 1.8 × 10⁷    | 17×     |
+| 10⁶       | 222.33 s |   5.18 s | 9.0 × 10⁵    | 9.7 × 10⁷    | **107×**|
 
-Below 10⁴ the GPU is kernel-launch bound and the CPU path wins; at 10⁵
-it's 15×; at 10⁶ it reaches **123×** over the NumPy CPU path at the
-scale where NumPy saturates memory bandwidth. The sweet spot for the
-GPU is N ≥ 10⁵.
+With the fused Sun+Jupiter CuPy `ElementwiseKernel` the force evaluation
+is a single GPU launch per substep. Below 10⁴ the GPU is still
+kernel-launch bound (Yoshida 4 has three substeps plus bookkeeping per
+composite step, each with a few launches), and the CPU path wins; at
+10⁵ it's 17×; at 10⁶ it reaches **107×**. The sweet spot for the GPU
+is N ≥ 10⁵.
 
 ## Why a symplectic integrator
 
