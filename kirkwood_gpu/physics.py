@@ -108,12 +108,70 @@ def primary_positions(t, params: CR3BPParams, xp=np):
     return (xs, ys), (xj, yj)
 
 
+_ACCEL_KERNEL = None
+
+
+def _get_accel_kernel():
+    """Fused CuPy ElementwiseKernel for the CR3BP Sun+Jupiter acceleration.
+
+    Collapses ~10 per-particle elementwise ops (two vector subtractions,
+    two inv_r3s, two force terms, and the sum) to a single GPU kernel
+    launch. Primary positions are passed as scalar kernel parameters so
+    they are broadcast once to all threads.
+    """
+    global _ACCEL_KERNEL
+    if _ACCEL_KERNEL is not None:
+        return _ACCEL_KERNEL
+    import cupy as cp  # type: ignore
+
+    _ACCEL_KERNEL = cp.ElementwiseKernel(
+        in_params=(
+            "float64 x, float64 y, "
+            "float64 xs, float64 ys, float64 xj, float64 yj, "
+            "float64 gm_s, float64 gm_j"
+        ),
+        out_params="float64 ax, float64 ay",
+        operation=r"""
+        double dxs = x - xs, dys = y - ys;
+        double rs2 = dxs*dxs + dys*dys;
+        double inv_rs3 = pow(rs2, -1.5);
+        double dxj = x - xj, dyj = y - yj;
+        double rj2 = dxj*dxj + dyj*dyj;
+        double inv_rj3 = pow(rj2, -1.5);
+        ax = -gm_s * dxs * inv_rs3 - gm_j * dxj * inv_rj3;
+        ay = -gm_s * dys * inv_rs3 - gm_j * dyj * inv_rj3;
+        """,
+        name="cr3bp_accel_fused",
+    )
+    return _ACCEL_KERNEL
+
+
+def _is_cupy_array(a):
+    return type(a).__module__.startswith("cupy")
+
+
 def acceleration(x, y, t, params: CR3BPParams, xp=np):
     """Gravitational acceleration on test particles from Sun + Jupiter.
 
     ``x, y`` are arrays of shape (N,). Returns (ax, ay) of the same shape.
+
+    On CuPy arrays, dispatches to a fused ElementwiseKernel that does the
+    entire force evaluation in one GPU launch. On NumPy, uses the
+    vectorized reference formulation below.
     """
     (xs, ys), (xj, yj) = primary_positions(t, params, xp=xp)
+
+    if _is_cupy_array(x):
+        kernel = _get_accel_kernel()
+        ax = xp.empty_like(x)
+        ay = xp.empty_like(y)
+        kernel(
+            x, y,
+            float(xs), float(ys), float(xj), float(yj),
+            float(params.GM_sun), float(params.GM_jup),
+            ax, ay,
+        )
+        return ax, ay
 
     dx_s = x - xs
     dy_s = y - ys

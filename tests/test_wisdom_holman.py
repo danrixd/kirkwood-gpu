@@ -51,6 +51,38 @@ def test_kepler_drift_closes_eccentric_orbit():
     assert abs(yn[0]) < 1e-9
 
 
+def test_fused_accel_matches_numpy():
+    """The CuPy fused acceleration kernel must match the NumPy reference
+    path on a batch of initial-belt IC. Tight tolerance: both evaluate the
+    same closed-form gravitational force. Skipped when CUDA isn't usable."""
+    import pytest
+
+    from kirkwood_gpu import _cuda_dll_loader  # noqa: F401
+
+    try:
+        import cupy as cp  # type: ignore
+
+        cp.cuda.runtime.getDeviceCount()
+        _ = float((cp.arange(4, dtype=cp.float64) ** 2).sum())
+    except Exception as exc:
+        pytest.skip(f"cupy/CUDA not usable ({exc!r})")
+
+    from kirkwood_gpu.physics import CR3BPParams, acceleration
+
+    rng = np.random.default_rng(11)
+    n = 4096
+    x = rng.uniform(2.0, 3.5, size=n)
+    y = rng.uniform(-3.5, 3.5, size=n)
+    params = CR3BPParams()
+
+    ax_n, ay_n = acceleration(x, y, 123.4, params, xp=np)
+    ax_c, ay_c = acceleration(
+        cp.asarray(x), cp.asarray(y), 123.4, params, xp=cp,
+    )
+    assert np.abs(ax_n - cp.asnumpy(ax_c)).max() < 1e-12
+    assert np.abs(ay_n - cp.asnumpy(ay_c)).max() < 1e-12
+
+
 def test_fused_kepler_matches_numpy():
     """The CuPy fused ElementwiseKernel path must agree with the NumPy
     reference path on a batch of random elliptic orbits. Tolerance is
